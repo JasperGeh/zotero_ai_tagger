@@ -10,6 +10,7 @@ An intelligent tagging assistant for Zotero libraries that uses Claude AI to aut
   - Document abstracts
   - PDF attachments
   - Linked URLs/webpages
+  - Blog posts
 - 📝 Maintains a master list of tags
 - 🔄 Preserves existing item tags
 - 📊 Detailed logging of all operations
@@ -25,7 +26,7 @@ An intelligent tagging assistant for Zotero libraries that uses Claude AI to aut
 
 1. Clone this repository:
 ```bash
-git clone https://github.com/jaspergeh/zotero-ai-tagger.git
+git clone https://github.com/yourusername/zotero-ai-tagger.git
 cd zotero-ai-tagger
 ```
 
@@ -48,28 +49,30 @@ pip install -r requirements.txt
 
 ## Configuration
 
-Set up your environment variables:
-
+1. Copy the template environment file to create your own:
 ```bash
-# Linux/macOS
-export ZOTERO_LIBRARY_ID="your_library_id"
-export ZOTERO_LIBRARY_TYPE="group"  # or "user"
-export ZOTERO_API_KEY="your_zotero_api_key"
-export ANTHROPIC_API_KEY="your_anthropic_api_key"
-
-# Windows (PowerShell)
-$env:ZOTERO_LIBRARY_ID="your_library_id"
-$env:ZOTERO_LIBRARY_TYPE="group"
-$env:ZOTERO_API_KEY="your_zotero_api_key"
-$env:ANTHROPIC_API_KEY="your_anthropic_api_key"
+cp .env.template .env
 ```
+
+2. Edit the `.env` file with your configuration:
+```ini
+# Zotero configuration
+ZOTERO_LIBRARY_ID="your_library_id"
+ZOTERO_LIBRARY_TYPE="group"  # or "user"
+ZOTERO_API_KEY="your_zotero_api_key"
+
+# Anthropic API configuration
+ANTHROPIC_API_KEY="your_anthropic_api_key"
+```
+
+The `.env` file is excluded from git for security. Never commit your API keys!
 
 ## Usage
 
 The script provides several command-line options to control its behavior:
 
 ```bash
-python zotero_tagger.py [-h] [-u] [-U] [-p] [-t TAGS_FILE] [-l LIMIT]
+python zotero_ai_tagger.py [-h] [-u] [-U] [-p] [-t TAGS_FILE] [-l LIMIT]
 
 options:
   -h, --help            Show this help message and exit
@@ -86,28 +89,28 @@ options:
 
 1. Process everything (PDFs and URLs) with existing tags:
 ```bash
-python zotero_tagger.py -p -U -t tags.txt
+python zotero_ai_tagger.py -p -U -t tags.txt
 ```
 
 2. Use PDFs primarily, fall back to URLs when no PDF exists:
 ```bash
-python zotero_tagger.py -p -u -t tags.txt
+python zotero_ai_tagger.py -p -u -t tags.txt
 ```
 
 3. Test run with only URLs (no PDFs) and process just 5 items:
 ```bash
-python zotero_tagger.py -U -t tags.txt -l 5
+python zotero_ai_tagger.py -U -t tags.txt -l 5
 ```
 
 ### Tags File Format
 
 The tags file should be a plain text file with one tag per line:
 ```text
-LLM jailbreaking
-LLM evals
-biosecurity
-unlearning
-protein design
+LLM Jailbreaking
+LLM Evals
+Biosecurity
+Unlearning
+Protein Design
 ```
 
 The script will:
@@ -131,20 +134,25 @@ tail -f zotero_tagger.log
 
 ## Best Practices
 
-1. **Start Small**
+1. **Environment Variables**
+   - Keep your `.env` file secure and never commit it
+   - Make sure to update all required variables in `.env`
+   - Use different API keys for development and production
+
+2. **Start Small**
    - Do a test run with a small number of items first
    - Review the generated tags before processing your entire library
 
-2. **Back Up Your Tags**
+3. **Back Up Your Tags**
    ```bash
    cp tags.txt tags_backup.txt
    ```
 
-3. **Monitor the Process**
+4. **Monitor the Process**
    - Keep an eye on the log file
    - Check the first few items to ensure tags are being generated as expected
 
-4. **Tag File Maintenance**
+5. **Tag File Maintenance**
    - Review and clean up your tags file periodically
    - Remove any unwanted or duplicate tags
    - Keep backups of your tags file
@@ -152,6 +160,13 @@ tail -f zotero_tagger.log
 ## Contributing
 
 Contributions are welcome! Please feel free to submit a Pull Request.
+
+1. Fork the repository
+2. Create your feature branch (`git checkout -b feature/AmazingFeature`)
+3. Copy `.env.template` to `.env` and configure your environment
+4. Commit your changes (`git commit -m 'Add some AmazingFeature'`)
+5. Push to the branch (`git push origin feature/AmazingFeature`)
+6. Open a Pull Request
 
 ## License
 
@@ -172,6 +187,7 @@ If you encounter any issues or have questions:
    - Your command line arguments
    - Relevant log output
    - Any error messages
+   - DO NOT include your API keys or other sensitive information
 
 ---
 **Note**: This tool is not officially affiliated with either Zotero or Anthropic.

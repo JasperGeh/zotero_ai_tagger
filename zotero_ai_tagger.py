@@ -203,7 +203,7 @@ class ZoteroTagger:
         if len(content_parts) == 1 and metadata['title']:
             prompt = f"""Please suggest 3-5 relevant tags for this document based only on its title.
             Apply suitable tags from this existing set: {sorted(list(self.existing_tags))}
-            Create new tags if one of the central concepts from the paper is not among the existing tags.
+            Create new tags if one of the central concepts from the paper is not among the existing tags. The document is already from an AI/ML collection, so refrain from setting generic tags like 'Machine Learning' or 'Computer Science'. 
             Tags should be in Capital Case with spaces as separators (e.g., LLM Jailbreaking, Protein Design, ...)
             Be conservative with tag suggestions when working with title only.
 
@@ -213,7 +213,7 @@ class ZoteroTagger:
         else:
             prompt = f"""Please analyze this document and suggest 3-5 relevant tags.
             Apply suitable tags from this existing set: {sorted(list(self.existing_tags))}
-            Create new tags if one of the central concepts from the paper is not among the existing tags.
+            Create new tags if one of the central concepts from the paper is not among the existing tags. The document is already from an AI/ML collection, so refrain from setting generic tags like 'Machine Learning' or 'Computer Science'. 
             Tags should be in Capital Case with spaces as separators (e.g., LLM Jailbreaking, Protein Design, ...)
 
             {chr(10).join(content_parts)}
@@ -225,7 +225,7 @@ class ZoteroTagger:
                 model="claude-3-5-sonnet-latest",
                 max_tokens=150,
                 temperature=0,
-                system="You are a helpful academic librarian who creates consistent, descriptive tags for academic papers.",
+                system="You are a helpful academic librarian who creates consistent, descriptive tags for academic papers, reports, and blog posts.",
                 messages=[{"role": "user", "content": prompt}]
             )
 
