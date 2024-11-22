@@ -1,5 +1,5 @@
 import os
-import argparse
+from dotenv import load_dotenv
 from pyzotero import zotero
 from anthropic import Anthropic
 import json
@@ -21,22 +21,30 @@ class ProcessingOptions:
     tags_file: Optional[Path]  # -t flag: Path to tags file
 
 class ZoteroTagger:
-    def __init__(self, library_id: str, library_type: str, api_key: str, 
-                 anthropic_api_key: str, options: ProcessingOptions):
-        """
-        Initialize the ZoteroTagger with necessary API keys and configurations.
+    def __init__(self, options: ProcessingOptions):
+        load_dotenv()
         
-        Args:
-            library_id: Zotero library/group ID
-            library_type: 'group' or 'user'
-            api_key: Zotero API key
-            anthropic_api_key: Anthropic API key
-            options: ProcessingOptions instance with command line flags
-        """
-        self.zot = zotero.Zotero(library_id, library_type, api_key)
-        self.anthropic = Anthropic(api_key=anthropic_api_key)
-        self.existing_tags: Set[str] = set()
+        # Load required environment variables
+        required_vars = {
+            'ZOTERO_LIBRARY_ID': os.getenv('ZOTERO_LIBRARY_ID'),
+            'ZOTERO_LIBRARY_TYPE': os.getenv('ZOTERO_LIBRARY_TYPE', 'group'),
+            'ZOTERO_API_KEY': os.getenv('ZOTERO_API_KEY'),
+            'ANTHROPIC_API_KEY': os.getenv('ANTHROPIC_API_KEY')
+        }
+        
+        # Validate environment variables
+        missing = [k for k, v in required_vars.items() if not v]
+        if missing:
+            raise ValueError(f"Missing environment variables: {', '.join(missing)}")
+            
+        self.zot = zotero.Zotero(
+            required_vars['ZOTERO_LIBRARY_ID'],
+            required_vars['ZOTERO_LIBRARY_TYPE'],
+            required_vars['ZOTERO_API_KEY']
+        )
+        self.anthropic = Anthropic(api_key=required_vars['ANTHROPIC_API_KEY'])
         self.options = options
+        self.existing_tags: Set[str] = set()
         
         # Set up logging
         logging.basicConfig(
@@ -194,8 +202,9 @@ class ZoteroTagger:
         # Adjust prompt based on available content
         if len(content_parts) == 1 and metadata['title']:
             prompt = f"""Please suggest 3-5 relevant tags for this document based only on its title.
-            If possible, use tags from this existing set: {sorted(list(self.existing_tags))}
-            Only create new tags if none of the existing ones are suitable.
+            Apply suitable tags from this existing set: {sorted(list(self.existing_tags))}
+            Create new tags if one of the central concepts from the paper is not among the existing tags.
+            Tags should be in Capital Case with spaces as separators (e.g., LLM Jailbreaking, Protein Design, ...)
             Be conservative with tag suggestions when working with title only.
 
             {content_parts[0]}
@@ -203,8 +212,9 @@ class ZoteroTagger:
             Please respond with ONLY the tags, one per line, nothing else."""
         else:
             prompt = f"""Please analyze this document and suggest 3-5 relevant tags.
-            If possible, use tags from this existing set: {sorted(list(self.existing_tags))}
-            Only create new tags if none of the existing ones are suitable.
+            Apply suitable tags from this existing set: {sorted(list(self.existing_tags))}
+            Create new tags if one of the central concepts from the paper is not among the existing tags.
+            Tags should be in Capital Case with spaces as separators (e.g., LLM Jailbreaking, Protein Design, ...)
 
             {chr(10).join(content_parts)}
 
@@ -212,7 +222,7 @@ class ZoteroTagger:
 
         try:
             response = self.anthropic.messages.create(
-                model="claude-3-sonnet-20240229",
+                model="claude-3-5-sonnet-latest",
                 max_tokens=150,
                 temperature=0,
                 system="You are a helpful academic librarian who creates consistent, descriptive tags for academic papers.",
@@ -294,19 +304,6 @@ def main():
     
     args = parser.parse_args()
     
-    # Load configuration from environment variables
-    config = {
-        'ZOTERO_LIBRARY_ID': os.getenv('ZOTERO_LIBRARY_ID'),
-        'ZOTERO_LIBRARY_TYPE': os.getenv('ZOTERO_LIBRARY_TYPE', 'group'),
-        'ZOTERO_API_KEY': os.getenv('ZOTERO_API_KEY'),
-        'ANTHROPIC_API_KEY': os.getenv('ANTHROPIC_API_KEY')
-    }
-    
-    # Validate configuration
-    missing_vars = [k for k, v in config.items() if not v]
-    if missing_vars:
-        raise ValueError(f"Missing environment variables: {', '.join(missing_vars)}")
-    
     # Create ProcessingOptions from command line arguments
     options = ProcessingOptions(
         url_fallback=args.url_fallback,
@@ -316,15 +313,7 @@ def main():
     )
     
     # Initialize and run tagger
-    tagger = ZoteroTagger(
-        config['ZOTERO_LIBRARY_ID'],
-        config['ZOTERO_LIBRARY_TYPE'],
-        config['ZOTERO_API_KEY'],
-        config['ANTHROPIC_API_KEY'],
-        options
-    )
-    
-    # Process library
+    tagger = ZoteroTagger(options)
     tagger.process_library(limit=args.limit)
 
 if __name__ == "__main__":
