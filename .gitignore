@@ -1,5 +1,7 @@
 .env
 tags.txt
+old_tagger.py
+zotero_tagger.log
 .DS_Store
 .DS_Store?
 ._*
